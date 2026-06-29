@@ -1,0 +1,22 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "api.js",
+  "scripts": {
+    "start:api": "node src/api.js",
+    "start:orch": "node src/orchestrator.js",
+    "start:gw": "node src/gateway.js",
+    "dev": "npx concurrently \"npm run start:api\" \"npm run start:orch\" \"npm run start:gw\"",
+    "inspect-dlq": "node src/inspect-dlq.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^4.18.2",
+    "kafkajs": "^2.2.4",
+    "uuid": "^9.0.0",
+    "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

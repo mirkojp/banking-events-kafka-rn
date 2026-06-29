@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Métricas de Sistema - Saga Bancaria</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0F172A;
+            --bg-secondary: #1E293B;
+            --bg-card: #334155;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --primary: #3B82F6;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --error: #EF4444;
+            --purple: #8B5CF6;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container { width: 100%; max-width: 900px; }
+        header {
+            margin-bottom: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 20px;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .status-badge {
+            background-color: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pulse {
+            width: 10px;
+            height: 10px;
+            background-color: var(--success);
+            border-radius: 50%;
+            animation: pulse-animation 1.5s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.9); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .grid-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        .card-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+        }
+        .card-value { font-size: 40px; font-weight: 700; color: #FFFFFF; }
+        .card-footer { margin-top: 12px; font-size: 12px; color: var(--text-muted); }
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-muted);
+            letter-spacing: 0.02em;
+        }
+        .breakdown-container {
+            background: var(--bg-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+        .breakdown-row { margin-bottom: 24px; }
+        .breakdown-row:last-child { margin-bottom: 0; }
+        .row-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 15px;
+        }
+        .bar-container {
+            height: 12px;
+            background-color: var(--bg-card);
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 6px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .color-funds { background-color: var(--primary); }
+        .color-fraud { background-color: var(--purple); }
+        .color-committed { background-color: var(--success); }
+        .color-reversed { background-color: var(--warning); }
+        .color-failed { background-color: var(--error); }
+        .color-other { background-color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Dashboard de Métricas</h1>
+                <p style="color: var(--text-muted); font-size: 14px; margin-top: 4px;">Monitoreo en tiempo real del bus de eventos Kafka</p>
+            </div>
+            <div class="status-badge">
+                <span class="pulse"></span>
+                <span id="gateway-status">GATEWAY ONLINE</span>
+            </div>
+        </header>
+
+        <div class="grid-cards">
+            <div class="card">
+                <div class="card-title">Conexiones WebSocket Activas</div>
+                <div class="card-value" id="active-connections">0</div>
+                <div class="card-footer">Clientes React Native suscritos actualmente</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Total de Eventos Procesados</div>
+                <div class="card-value" id="total-events">0</div>
+                <div class="card-footer">Eventos distribuidos por el bus de datos</div>
+            </div>
+        </div>
+
+        <div class="section-title">Distribución de Eventos por Tipo</div>
+        <div class="breakdown-container" id="breakdown-list">
+            <p style="color: var(--text-muted); text-align: center; padding: 10px 0;">Esperando primer evento en el bus...</p>
+        </div>
+    </div>
+
+    <script>
+        const getFriendlyEventInfo = (type) => {
+            switch(type) {
+                case 'Funds Reserved': return { name: '💰 Funds Reserved (Reserva de Fondos)', class: 'color-funds' };
+                case 'FraudChecked': return { name: '🔍 FraudChecked (Control de Fraude)', class: 'color-fraud' };
+                case 'Committed': return { name: '✅ Committed (Transacciones Confirmadas)', class: 'color-committed' };
+                case 'Reversed': return { name: '⚠️ Reversed (Transacciones Revertidas)', class: 'color-reversed' };
+                case 'Failed': return { name: '❌ Failed (Fallos Críticos / DLQ)', class: 'color-failed' };
+                default: return { name: type, class: 'color-other' };
+            }
+        };
+
+        const updateMetrics = async () => {
+            try {
+                const response = await fetch('/metrics/data');
+                const data = await response.json();
+                
+                document.getElementById('active-connections').textContent = data.activeConnections;
+                document.getElementById('total-events').textContent = data.totalEventsProcessed;
+                
+                const breakdownList = document.getElementById('breakdown-list');
+                const types = Object.keys(data.byType);
+                
+                if (types.length === 0) {
+                    breakdownList.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 10px 0;">Esperando primer evento en el bus...</p>';
+                    return;
+                }
+                
+                let html = '';
+                types.forEach(type => {
+                    const count = data.byType[type];
+                    const percent = data.totalEventsProcessed > 0 ? ((count / data.totalEventsProcessed) * 100).toFixed(0) : 0;
+                    const info = getFriendlyEventInfo(type);
+                    
+                    html += `
+                        <div class="breakdown-row">
+                            <div class="row-info">
+                                <span>${info.name}</span>
+                                <span>${count} (${percent}%)</span>
+                            </div>
+                            <div class="bar-container">
+                                <div class="bar-fill ${info.class}" style="width: ${percent}%"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                breakdownList.innerHTML = html;
+            } catch (error) {
+                console.error("Error al obtener las métricas:", error);
+                document.getElementById('gateway-status').textContent = 'GATEWAY OFFLINE';
+                document.getElementById('gateway-status').parentElement.style.color = '#EF4444';
+                document.getElementById('gateway-status').parentElement.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                document.getElementById('gateway-status').parentElement.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+                document.getElementById('gateway-status').previousElementSibling.style.backgroundColor = '#EF4444';
+            }
+        };
+
+        setInterval(updateMetrics, 1500);
+        updateMetrics();
+    </script>
+</body>
+</html>
