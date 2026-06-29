@@ -1,51 +1,8 @@
-﻿# 🏦 Banking Events — Kafka + React Native
+﻿#  Banking Events — Kafka + React Native
 
 Aplicación bancaria de demostración que implementa **Event-Driven Architecture** con el patrón **Saga** usando Apache Kafka como bus de mensajes y React Native (Expo) como cliente móvil.
 
----
-
-## 📐 Arquitectura
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENTE MÓVIL                            │
-│                  React Native (Expo)                            │
-│         POST /transactions     WebSocket ws://...:8080          │
-└───────────────┬───────────────────────────┬─────────────────────┘
-                │                           │ eventos en tiempo real
-                ▼                           │
-┌──────────────────────┐          ┌─────────┴──────────┐
-│      API Gateway     │          │  WebSocket Gateway  │
-│    Express :3000     │          │      WS :8080       │
-│                      │          │  Métricas :8082     │
-│  Produce comandos en │          │                     │
-│  topic txn.commands  │          │  Consume eventos de │
-└──────────┬───────────┘          │  topic txn.events   │
-           │                      └─────────▲───────────┘
-           │                                │
-           ▼                                │
-┌──────────────────────────────────────────────────────┐
-│                    Apache Kafka                       │
-│   Topics: txn.commands │ txn.events │ txn.dlq         │
-└──────────────────────┬───────────────────────────────┘
-                       │
-                       ▼
-         ┌─────────────────────────┐
-         │      Orchestrator       │
-         │  Consume txn.commands   │
-         │  Publica en txn.events  │
-         │                         │
-         │  Saga:                  │
-         │  1. Funds Reserved      │
-         │  2. FraudChecked        │
-         │  3. Committed/Reversed  │
-         │  Error → DLQ + Failed   │
-         └─────────────────────────┘
-```
-
----
-
-## 🔄 Flujo de la Saga (Happy Path)
+##  Flujo de la Saga (Happy Path)
 
 ```
 Mobile App
@@ -68,7 +25,7 @@ WS Gateway consume txn.events → push al cliente correcto por userId
 
 ---
 
-## 🧩 Estructura del Proyecto
+##  Estructura del Proyecto
 
 ```
 banking-events-kafka-rn/
@@ -95,18 +52,17 @@ banking-events-kafka-rn/
 
 ---
 
-## ⚙️ Requisitos Previos
+##  Requisitos Previos
 
-| Herramienta | Versión recomendada |
-|-------------|---------------------|
-| Node.js     | ≥ 18.x              |
+
+| Node.js ≥ 18.x |           
 | Docker & Docker Compose | Cualquier versión reciente |
 | Expo CLI    | `npx expo` (incluido) |
 | Android/iOS emulador o dispositivo físico (mismo Wi-Fi) | — |
 
 ---
 
-## 🚀 Puesta en Marcha
+##  Puesta en Marcha
 
 ### 1. Levantar Kafka con Docker
 
@@ -176,7 +132,7 @@ Luego escaneá el QR con la app **Expo Go** (Android/iOS) o presioná `a` para a
 
 ---
 
-## 📊 Observabilidad
+##  Observabilidad
 
 Una vez que el backend esté corriendo, accedé al dashboard de métricas en:
 
@@ -184,28 +140,11 @@ Una vez que el backend esté corriendo, accedé al dashboard de métricas en:
 http://localhost:8082/metrics
 ```
 
-El endpoint `/metrics/data` devuelve JSON con:
-- Conexiones WebSocket activas
-- Total de eventos procesados
-- Conteo de eventos por tipo
 
 ---
 
-## 🔑 Conceptos Clave Implementados
 
-| Concepto | Implementación |
-|----------|---------------|
-| **Event-Driven Architecture** | Kafka como bus de mensajes desacoplado |
-| **Patrón Saga** | Orquestación secuencial de transacciones bancarias |
-| **CQRS** | Separación de comandos (`txn.commands`) y eventos (`txn.events`) |
-| **Dead Letter Queue (DLQ)** | Errores irrecuperables enviados a `txn.dlq` |
-| **Idempotencia** | El orchestrator descarta comandos duplicados por ID |
-| **Real-time Push** | Gateway WebSocket entrega eventos solo al usuario correcto |
-| **Detección de Fraude** | Simulación probabilística (15% riesgo HIGH → Reversed) |
-
----
-
-## 🗂️ Topics de Kafka
+##  Topics de Kafka
 
 | Topic | Descripción |
 |-------|-------------|
