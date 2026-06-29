@@ -153,10 +153,3 @@ http://localhost:8082/metrics
 | `txn.dlq` | Dead Letter Queue — comandos que fallaron irrecuperablemente |
 
 ---
-
-## 💡 Notas de Desarrollo
-
-- La app y el backend deben estar en la **misma red Wi-Fi** para que el WebSocket y la API sean accesibles desde el dispositivo físico.
-- El `USER_ID` hardcodeado en `App.js` (`user_facu_2025`) se usa para filtrar qué eventos recibe cada cliente en el Gateway.
-- El orchestrator incluye un **fallo aleatorio del 10%** para simular errores irrecuperables y demostrar el flujo de la DLQ.
-- Las notificaciones en la app se auto-eliminan después de **10 segundos**.
