@@ -36,8 +36,7 @@ banking-events-kafka-rn/
 │       ├── config.js             # Cliente Kafka y definición de tópicos
 │       ├── api.js                # API REST (Express :3000) — Produce comandos
 │       ├── orchestrator.js       # Saga Orchestrator — Lógica de negocio y estados
-│       ├── gateway.js            # WebSocket Gateway (:8080) + API de Métricas (:8082)
-│       ├── dashboard.html        # UI heredada de observabilidad (Legacy)
+│       ├── gateway.js            
 │       └── inspect-dlq.js        # Script utilitario para auditar la Dead Letter Queue
 │
 └── mobile-app/
