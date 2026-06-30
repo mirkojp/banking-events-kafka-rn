@@ -1,10 +1,10 @@
 // App.js
 import React, { useState, useEffect, useRef } from 'react';
 import { Text, View, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useTransactionSocket } from './src/hooks/useTransactionSocket';
+import { useTransactionSocket } from '../hooks/useTransactionSocket';
 
-// Importamos el estilo por defecto y la función utilitaria
-import styles, { getEventStyles } from './styles';
+
+import styles, { getEventStyles } from '../styles/styles';
 
 const SERVER_IP = '192.168.0.93';
 const USER_ID = 'user_facu_2025';

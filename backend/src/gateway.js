@@ -1,7 +1,5 @@
 const WebSocket = require('ws');
-const http = require('http'); // Para el endpoint de métricas
-const fs = require('fs');
-const path = require('path');
+const http = require('http');
 const { kafka, TOPICS } = require('./config');
 
 const wss = new WebSocket.Server({ port: 8080 });
@@ -9,7 +7,7 @@ const consumer = kafka.consumer({ groupId: 'gateway-group' });
 
 const userConnections = new Map();
 
-// PUNTO 3: OBSERVABILIDAD (Métricas)
+// OBSERVABILIDAD (Métricas puras en memoria)
 const metrics = {
     totalEventsProcessed: 0,
     byType: {}
@@ -34,23 +32,29 @@ wss.on('connection', (ws) => {
     });
 });
 
-// Cargar el HTML del Dashboard desde archivo externo
-const dashboardHtml = fs.readFileSync(path.join(__dirname, 'dashboard.html'), 'utf8');
-
-// Endpoint de Métricas Simple (Puerto 8082)
+// Endpoint de API HTTP exclusivo para Datos (Habilitamos CORS para que el frontend pueda consultar)
 http.createServer((req, res) => {
-    if (req.url === '/metrics') {
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(dashboardHtml);
-    } else if (req.url === '/metrics/data') {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+    // Configuración básica de CORS para que tu frontend externo pueda consultar la API
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Content-Type', 'application/json');
+
+    if (req.method === 'OPTIONS') {
+        res.writeHead(204);
+        res.end();
+        return;
+    }
+
+    if (req.url === '/metrics/data') {
+        res.writeHead(200);
         res.end(JSON.stringify({
             status: "Gateway Online",
             activeConnections: userConnections.size,
             ...metrics
         }));
     } else {
-        res.writeHead(404); res.end();
+        res.writeHead(404);
+        res.end(JSON.stringify({ error: "Not Found" }));
     }
 }).listen(8082);
 
@@ -74,5 +78,5 @@ const run = async () => {
     });
 };
 
-console.log('Gateway WS en puerto 8080 | Métricas en puerto 8082 en /metrics');
+console.log('Gateway WS en puerto 8080 | API de Métricas en puerto 8082 (/metrics/data)');
 run();
