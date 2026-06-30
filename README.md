@@ -2,25 +2,25 @@
 
 Aplicación bancaria de demostración que implementa **Event-Driven Architecture** con el patrón **Saga** usando Apache Kafka como bus de mensajes y React Native (Expo) como cliente móvil.
 
-##  Flujo de la Saga (Happy Path)
+##  Flujo de la Saga
 
 ```
-Mobile App
-   │
-   ├─► POST /transactions  →  API publica en txn.commands
-   │
-   └─► WebSocket subscribe (userId)
-           │
-Orchestrator consume txn.commands
-   │
-   ├─► Emit: Funds Reserved    → txn.events
-   ├─► Emit: FraudChecked      → txn.events  (15% riesgo HIGH)
-   │       ├─ [LOW]  Emit: Committed  → txn.events
-   │       └─ [HIGH] Emit: Reversed   → txn.events
-   │
-   └─► [Error 10%] → txn.dlq + Emit: Failed
-           │
-WS Gateway consume txn.events → push al cliente correcto por userId
+Mobile/Web App
+             │
+             ├─► POST /transactions   ─►  API publica en topic: txn.commands
+             │
+             └─► WebSocket subscribe (userId)
+                     │
+       Orchestrator consume txn.commands
+             │
+             ├─► Emit: Funds Reserved     ─► topic: txn.events
+             ├─► Emit: FraudChecked       ─► topic: txn.events (15% riesgo HIGH)
+             │    ├─ [LOW]  Emit: Committed ─► topic: txn.events
+             │    └─ [HIGH] Emit: Reversed  ─► topic: txn.events
+             │
+             └─► [Error 10%] ─► topic: txn.dlq + Emit: Failed
+                     │
+       WS Gateway consume txn.events ─► Push directo al cliente por userId
 ```
 
 ---
@@ -30,37 +30,28 @@ WS Gateway consume txn.events → push al cliente correcto por userId
 ```
 banking-events-kafka-rn/
 ├── backend/
-│   ├── docker-compose.yml        # Zookeeper + Kafka
+│   ├── docker-compose.yml        # Infraestructura: Zookeeper + Kafka Broker
 │   ├── package.json
 │   └── src/
-│       ├── config.js             # Cliente Kafka y definición de topics
-│       ├── api.js                # REST API (Express :3000) — produce comandos
-│       ├── orchestrator.js       # Saga orchestrator — lógica de negocio
-│       ├── gateway.js            # WebSocket Gateway (:8080) + Dashboard (:8082)
-│       ├── dashboard.html        # UI de observabilidad
-│       └── inspect-dlq.js        # Script para inspeccionar la Dead Letter Queue
+│       ├── config.js             # Cliente Kafka y definición de tópicos
+│       ├── api.js                # API REST (Express :3000) — Produce comandos
+│       ├── orchestrator.js       # Saga Orchestrator — Lógica de negocio y estados
+│       ├── gateway.js            # WebSocket Gateway (:8080) + API de Métricas (:8082)
+│       ├── dashboard.html        # UI heredada de observabilidad (Legacy)
+│       └── inspect-dlq.js        # Script utilitario para auditar la Dead Letter Queue
 │
 └── mobile-app/
-    ├── App.js                    # Componente raíz — UI del simulador
-    ├── styles.js                 # Sistema de estilos centralizado
-    ├── index.js
-    ├── app.json
+    ├── package.json              # Configuración de dependencias (Entry: expo-router)
+    ├── app.json                  # Configuración del ecosistema Expo
     └── src/
-        └── hooks/
-            └── useTransactionSocket.js   # Hook WebSocket — suscripción a eventos
+        ├── app/                  # ── PANTALLAS (Enrutado nativo por archivos) ──
+        │   ├── index.js          # Raíz (/) — Simulador de pagos y línea de tiempo
+        │   └── metrics.js        # Dashboard (/metrics) — Gráficos de distribución en tiempo real
+        ├── hooks/
+        │   └── useTransactionSocket.js  # Suscripción reactiva al WS Gateway
+        └── styles.js             # Sistema de estilos unificado (PALETTE Slate/Tailwind)
 ```
 
----
-
-##  Requisitos Previos
-
-
-| Node.js ≥ 18.x |           
-| Docker & Docker Compose | Cualquier versión reciente |
-| Expo CLI    | `npx expo` (incluido) |
-| Android/iOS emulador o dispositivo físico (mismo Wi-Fi) | — |
-
----
 
 ##  Puesta en Marcha
 
@@ -75,7 +66,6 @@ Esto inicia:
 - **Zookeeper** en el puerto `2181`
 - **Kafka Broker** en el puerto `9092`
 
-> Esperá ~10 segundos a que el broker esté completamente listo antes de continuar.
 
 ---
 
@@ -137,7 +127,8 @@ Luego escaneá el QR con la app **Expo Go** (Android/iOS) o presioná `a` para a
 Una vez que el backend esté corriendo, accedé al dashboard de métricas en:
 
 ```
-http://localhost:8082/metrics
+http://localhost:8081/
+http://localhost:8081/metrics
 ```
 
 
